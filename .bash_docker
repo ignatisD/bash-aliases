@@ -1,0 +1,107 @@
+alias dbuild="docker-compose build"
+alias dstart="docker-compose up -d"
+alias dstop="docker-compose rm -f -s"
+alias ddown="docker-compose down"
+alias dcps="docker-compose ps"
+alias dclogs="docker-compose logs"
+alias dstats='docker stats --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" --no-stream'
+alias dpush="docker-compose push"
+alias dbash=DockerBash
+alias dcconfig=DockerConfig
+
+alias ddeploy="docker stack deploy -c"
+alias dexec=DockerExec
+alias dexecremote=DockerExecRemote
+alias dls="docker service ls"
+alias dps="docker service ps"
+alias drm="docker service rm"
+alias dcrm="docker config rm"
+alias dlogs="docker service logs $1 --raw"
+
+function DockerBash()
+{
+    _BASH="$2"
+    if [[ -z "$2" ]]; then
+        _BASH="bash"
+    fi;
+    _USER=""
+    if [[ -z "$3" ]]; then
+        _USER="--user $3"
+    fi;
+    docker-compose exec "$_USER" "$1" "$_BASH"
+}
+
+function DockerConfig()
+{
+	COMPOSE_FILE="$1"
+	if [ -z "$1" ]; then
+		COMPOSE_FILE=docker-compose.yml
+	fi;
+	docker-compose -f "$COMPOSE_FILE" config
+}
+
+
+
+function DockerExec()
+{
+	if [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
+        echo "Usage: `dexec <CONTAINER_NAME> [<SHELL:-bash>] [<COMMAND>] [<USER:-root>]`"
+        return;
+    fi;
+	if [ -z "$1" ]; then
+        echo "Container name and command are required!"
+        echo "dexec <CONTAINER_NAME> [<SHELL:-bash>] [<COMMAND>] [<USER:-root>]"
+        return;
+    fi;
+    DOCKER_EXEC_CONTAINER_NAME="$1"
+    DOCKER_EXEC_CONTAINER_SHELL="$2"
+    DOCKER_EXEC_COMMAND=""
+    DOCKER_EXEC_USER=""
+    if [ -z "$2" ]; then
+        DOCKER_EXEC_CONTAINER_SHELL="bash"
+    fi;
+    if [ -z "$3" ]; then
+        DOCKER_EXEC_COMMAND="$3"
+    fi;
+    if [ ! -z "$4" ]; then
+        DOCKER_EXEC_CONTAINER_USER="--user $4"
+    fi;
+    DOCKER_EXEC_CONTAINER_ID=$(docker container ls -f name=${DOCKER_EXEC_CONTAINER_NAME} --format "{{.Names}}" | grep -Po "([a-z-_]*${DOCKER_EXEC_CONTAINER_NAME}[a-z0-9._\-]*)" | head -n 1)
+    if [ -z "$DOCKER_EXEC_CONTAINER_ID" ]; then
+        echo "Container not found"
+        return;
+    fi;
+    if [ -z "$DOCKER_EXEC_COMMAND" ]; then
+        docker exec -it ${DOCKER_EXEC_CONTAINER_USER} ${DOCKER_EXEC_CONTAINER_ID} "${DOCKER_EXEC_CONTAINER_SHELL}"
+		return;
+    fi;
+    docker exec -it ${DOCKER_EXEC_CONTAINER_USER} ${DOCKER_EXEC_CONTAINER_ID} ${DOCKER_EXEC_CONTAINER_SHELL} -c "${DOCKER_EXEC_COMMAND}"
+}
+
+function DockerExecRemote()
+{
+	if [ -z "$1" ] || [ -z "$2" ]; then
+		echo "Service partial name and command are required!"
+		echo "dexecremote <SERVICE_NAME> <COMMAND> [<SHELL:-bash>]"
+    	return
+	fi;
+	DOCKER_EXEC_SERVICE_NAME="$1"
+	DOCKER_EXEC_COMMAND="$2"
+	DOCKER_EXEC_CONTAINER_SHELL="$3"
+	if [ -z "$3" ]; then
+		DOCKER_EXEC_CONTAINER_SHELL="bash"
+	fi;
+	DOCKER_EXEC_TASK_NAME=$(docker service ls --format "{{.Name}}" | grep "${DOCKER_EXEC_SERVICE_NAME}")
+	if [ -z "$DOCKER_EXEC_TASK_NAME" ]; then
+		echo Service not found
+    	return
+	fi;
+    DOCKER_EXEC_TASK_ID=$(docker service ps -f "desired-state=running" -q ${DOCKER_EXEC_TASK_NAME} | head -n 1)
+    DOCKER_EXEC_CONT_ID=$(docker inspect -f "{{.Status.ContainerStatus.ContainerID}}" ${DOCKER_EXEC_TASK_ID} | head -n 1)
+    DOCKER_EXEC_NODE_ID=$(docker inspect -f "{{.NodeID}}" ${DOCKER_EXEC_TASK_ID} | head -n 1)
+    DOCKER_EXEC_NODE_IP=$(docker inspect -f "{{.Status.Addr}}" ${DOCKER_EXEC_NODE_ID} | head -n 1)
+
+	ssh -T "${DOCKER_EXEC_NODE_IP}" << EOSSH
+            docker exec ${DOCKER_EXEC_CONT_ID} ${DOCKER_EXEC_CONTAINER_SHELL} -c "${DOCKER_EXEC_COMMAND}"
+EOSSH
+}
