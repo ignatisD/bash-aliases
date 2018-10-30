@@ -45,22 +45,22 @@ function DockerConfig()
 function DockerExec()
 {
 	if [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
-        echo "Usage: `dexec <CONTAINER_NAME> [<SHELL:-bash>] [<COMMAND>] [<USER:-root>]`"
+        echo "Usage: dexec <CONTAINER_NAME> [<SHELL:-bash>] [<COMMAND>] [<USER:-root>]"
         return;
     fi;
 	if [ -z "$1" ]; then
-        echo "Container name and command are required!"
+        echo "Container is required!"
         echo "dexec <CONTAINER_NAME> [<SHELL:-bash>] [<COMMAND>] [<USER:-root>]"
-        return;
+    	return;
     fi;
     DOCKER_EXEC_CONTAINER_NAME="$1"
-    DOCKER_EXEC_CONTAINER_SHELL="$2"
+    DOCKER_EXEC_CONTAINER_SHELL="bash"
     DOCKER_EXEC_COMMAND=""
     DOCKER_EXEC_USER=""
-    if [ -z "$2" ]; then
-        DOCKER_EXEC_CONTAINER_SHELL="bash"
+    if [ ! -z "$2" ]; then
+        DOCKER_EXEC_CONTAINER_SHELL="$2"
     fi;
-    if [ -z "$3" ]; then
+    if [ ! -z "$3" ]; then
         DOCKER_EXEC_COMMAND="$3"
     fi;
     if [ ! -z "$4" ]; then
