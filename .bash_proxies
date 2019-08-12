@@ -1,31 +1,30 @@
 # Proxies
 
-alias init-proxy=initProxy
-alias kill-proxy=killProxy
+alias proxify=Proxify
 
-function initProxy()
+function Proxify()
 {
-    # Host 'test' is part of the `~/.ssh/config` file
-    SSH_HOST="test"
-    process_pid=$(ps aux | grep -i "$SSH_HOST" | grep -v grep | awk {'print $2'})
+	sshport=8080
+	sshalias="$1"
+	if [ -z "$sshalias" ]; then
+		echo "Alias needed"
+		exit;
+	fi;
+	if [ ! -z "$2" ]; then
+		sshport="$2"
+	fi;	
+    process_pid=$(ps aux | grep -i "$sshalias" | grep -v grep | awk {'print $2'})
     if [ "$process_pid" == "" ]; then
-    	ssh -D 0.0.0.0:8080 -f -C -q -N "$SSH_HOST"
-		process_pid=$(ps aux | grep -i "$SSH_HOST" | grep -v grep | awk {'print $2'})
-		echo "Proxy running at 0.0.0.0:8080 with pid: $process_pid";
+    	ssh -D 0.0.0.0:"$sshport" -f -C -q -N "$sshalias"
+		process_pid=$(ps aux | grep -i "$sshalias" | grep -v grep | awk {'print $2'})
+		echo "Proxy running at 0.0.0.0:"$sshport" with pid: $process_pid";
     else 
-		echo "Proxy running at 0.0.0.0:8080 with pid: $process_pid";
-    fi;
-}
-
-function killProxy()
-{
-    # Host 'test' is part of the `~/.ssh/config` file
-    SSH_HOST="test"
-    process_pid=$(ps aux | grep -i "$SSH_HOST" | grep -v grep | awk {'print $2'})
-    if [ "$process_pid" != "" ]; then 
-		kill $process_pid;
-        echo "Proxy running at 0.0.0.0:8080 with pid: $process_pid was successfully killed";
-    else 
-        echo "Proxy kill failed or no proxy present.";
+		echo "Proxy running at 0.0.0.0:"$sshport" with pid: $process_pid";
+		read -p "Kill? [y/n]: " -n 1 -r
+		echo
+		if [[ $REPLY =~ ^[Yy]$ ]]; then
+			kill $process_pid;
+		    echo "Proxy running at 0.0.0.0:"$sshport" with pid: $process_pid was successfully killed";
+    	fi;
     fi;
 }
