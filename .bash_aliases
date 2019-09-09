@@ -81,12 +81,10 @@ function GetMyInterface()
 
 function GetBTCPrice() 
 {
-
 	PAIR=EUR
 	if [[ ${1} = USD ]] | [[ ${1} = usd ]]; then PAIR=USD; fi;
-
 	KRAKEN=$(curl -s -k -X GET "https://api.kraken.com/0/public/Ticker?pair=XBT${PAIR}" | node -pe "parseFloat(JSON.parse(require('fs').readFileSync('/dev/stdin').toString()).result.XXBTZ${PAIR}.c[0]).toFixed(2)")
-	COINBASE=$(curl -s -k -X GET "https://api.coinbase.com/v2/exchange-rates?currency=BTC" | node -pe "parseFloat(JSON.parse(require('fs').readFileSync('/dev/stdin').toString()).data.rates.${PAIR}).toFixed(2)")
+	COINBASE=$(curl -s -k -X GET "https://api.pro.coinbase.com/products/BTC-${PAIR}/ticker" | node -pe "parseFloat(JSON.parse(require('fs').readFileSync('/dev/stdin').toString()).price).toFixed(2)")
 	echo -e "\033[94mCoinbase : 1 BTC = ${COINBASE} ${PAIR} \033[0m"
 	echo -e "\033[95mKraken   : 1 BTC = ${KRAKEN} ${PAIR} \033[0m"
 }
