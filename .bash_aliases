@@ -12,6 +12,8 @@ alias tsnpm=InstallNpmWithTypes
 alias match=PerlMatch
 alias aliasedit=EditMyAliases
 alias sshedit="gedit ~/.ssh/config"
+alias btc=GetBTCPrice
+
 
 function EditMyAliases() 
 {
@@ -75,4 +77,16 @@ function GetMyInterface()
 	TEST_HOST_IP=$(getent ahosts "$TEST_HOST" | awk '{print $1; exit}')
 	ACTUAL_INTERFACE=$(ip route get "$TEST_HOST_IP" | grep -Po '(?<=(dev )).*(?= src| proto)')
 	echo -e "Interface: \e[38;5;196m${ACTUAL_INTERFACE:-NOT_FOUND}\e[0m"
+}
+
+function GetBTCPrice() 
+{
+
+	PAIR=EUR
+	if [[ ${1} = USD ]] | [[ ${1} = usd ]]; then PAIR=USD; fi;
+
+	KRAKEN=$(curl -s -k -X GET "https://api.kraken.com/0/public/Ticker?pair=XBT${PAIR}" | node -pe "parseFloat(JSON.parse(require('fs').readFileSync('/dev/stdin').toString()).result.XXBTZ${PAIR}.c[0]).toFixed(2)")
+	COINBASE=$(curl -s -k -X GET "https://api.coinbase.com/v2/exchange-rates?currency=BTC" | node -pe "parseFloat(JSON.parse(require('fs').readFileSync('/dev/stdin').toString()).data.rates.${PAIR}).toFixed(2)")
+	echo -e "\033[94mCoinbase : 1 BTC = ${COINBASE} ${PAIR} \033[0m"
+	echo -e "\033[95mKraken   : 1 BTC = ${KRAKEN} ${PAIR} \033[0m"
 }
