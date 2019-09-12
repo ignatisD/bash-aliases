@@ -12,7 +12,6 @@ alias tsnpm=InstallNpmWithTypes
 alias match=PerlMatch
 alias aliasedit=EditMyAliases
 alias sshedit="gedit ~/.ssh/config"
-alias btc=GetBTCPrice
 
 
 function EditMyAliases() 
@@ -79,12 +78,58 @@ function GetMyInterface()
 	echo -e "Interface: \e[38;5;196m${ACTUAL_INTERFACE:-NOT_FOUND}\e[0m"
 }
 
-function GetBTCPrice() 
+function btc()
 {
+    local OPTIND
+    usage() { echo "Usage: btc [-c USD] [-t <int>]" 1>&2; exit 1; }
 	PAIR=EUR
-	if [[ ${1} = USD ]] | [[ ${1} = usd ]]; then PAIR=USD; fi;
-	KRAKEN=$(curl -s -k -X GET "https://api.kraken.com/0/public/Ticker?pair=XBT${PAIR}" | node -pe "parseFloat(JSON.parse(require('fs').readFileSync('/dev/stdin').toString()).result.XXBTZ${PAIR}.c[0]).toFixed(2)")
-	COINBASE=$(curl -s -k -X GET "https://api.pro.coinbase.com/products/BTC-${PAIR}/ticker" | node -pe "parseFloat(JSON.parse(require('fs').readFileSync('/dev/stdin').toString()).price).toFixed(2)")
-	echo -e "\033[94mCoinbase : 1 BTC = ${COINBASE} ${PAIR} \033[0m"
-	echo -e "\033[95mKraken   : 1 BTC = ${KRAKEN} ${PAIR} \033[0m"
+    SLEEP_FOR=""
+    while getopts ":t::c::" o; do
+        case "${o}" in
+            t)
+                SLEEP_FOR=${OPTARG}
+                ;;
+            c)
+                if [[ ${OPTARG} = USD ]] || [[ ${OPTARG} = usd ]]; then
+                    PAIR=USD;
+                fi;
+                ;;
+            *)
+                usage
+                return;
+                ;;
+        esac
+    done
+    shift $(( OPTIND - 1 ))
+    while true; do
+        echo "-------------------------------------------------"
+        KRAKENTO=""
+        COINBASETO=""
+        KRAKEN=$(curl -s -k -X GET "https://api.kraken.com/0/public/Ticker?pair=XBT${PAIR}" | node -pe "parseFloat(JSON.parse(require('fs').readFileSync('/dev/stdin').toString()).result.XXBTZ${PAIR}.c[0]).toFixed(2)")
+        COINBASE=$(curl -s -k -X GET "https://api.pro.coinbase.com/products/BTC-${PAIR}/ticker" | node -pe "parseFloat(JSON.parse(require('fs').readFileSync('/dev/stdin').toString()).price).toFixed(2)")
+        #if [[ ! -z "${PREVKRAKEN}" ]]; then
+            KRAK=$(node -pe "((parseFloat(${KRAKEN}) - parseFloat('${PREVKRAKEN}' || ${KRAKEN}))/parseFloat(${KRAKEN})).toFixed(4)")
+            COIN=$(node -pe "((parseFloat(${COINBASE}) - parseFloat('${PREVCOINBASE}' || ${COINBASE}))/parseFloat(${COINBASE})).toFixed(4)")
+            if [[ "${PREVKRAKEN}" > "${KRAKEN}" ]]; then
+                KRAKENTO="\033[31m${KRAK}%"
+            else
+                KRAKENTO="\033[32m+${KRAK}%"
+            fi;
+            if [[ "${PREVCOINBASE}" > "${COINBASE}" ]]; then
+                COINBASETO="\033[31m${COIN}%"
+            else
+                COINBASETO="\033[32m+${COIN}%"
+            fi;
+        #fi;
+        echo -e "- \033[94mCoinbase : 1 BTC = ${COINBASE} ${PAIR} ${COINBASETO}\033[0m \t-"
+        echo -e "- \033[95mKraken   : 1 BTC = ${KRAKEN} ${PAIR} ${KRAKENTO}\033[0m \t-"
+        echo "-------------------------------------------------"
+        PREVKRAKEN=${KRAKEN}
+        PREVCOINBASE=${COINBASE}
+        if [ -z "${SLEEP_FOR}" ]; then
+            return;
+        fi;
+        sleep "${SLEEP_FOR}"
+        echo -e "\033[5A"
+    done;
 }
