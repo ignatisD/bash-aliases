@@ -107,9 +107,9 @@ function btc()
         COINBASETO=""
         KRAKEN=$(curl -s -k -X GET "https://api.kraken.com/0/public/Ticker?pair=XBT${PAIR}" | node -pe "parseFloat(JSON.parse(require('fs').readFileSync('/dev/stdin').toString()).result.XXBTZ${PAIR}.c[0]).toFixed(2)")
         COINBASE=$(curl -s -k -X GET "https://api.pro.coinbase.com/products/BTC-${PAIR}/ticker" | node -pe "parseFloat(JSON.parse(require('fs').readFileSync('/dev/stdin').toString()).price).toFixed(2)")
-        #if [[ ! -z "${PREVKRAKEN}" ]]; then
-            KRAK=$(node -pe "((parseFloat(${KRAKEN}) - parseFloat('${PREVKRAKEN}' || ${KRAKEN}))/parseFloat(${KRAKEN})).toFixed(4)")
-            COIN=$(node -pe "((parseFloat(${COINBASE}) - parseFloat('${PREVCOINBASE}' || ${COINBASE}))/parseFloat(${COINBASE})).toFixed(4)")
+
+            KRAK=$(node -pe "((parseFloat(${KRAKEN}) - parseFloat('${PREVKRAKEN}' || ${KRAKEN}))*100/parseFloat(${KRAKEN})).toFixed(2)")
+            COIN=$(node -pe "((parseFloat(${COINBASE}) - parseFloat('${PREVCOINBASE}' || ${COINBASE}))*100/parseFloat(${COINBASE})).toFixed(2)")
             if [[ "${PREVKRAKEN}" > "${KRAKEN}" ]]; then
                 KRAKENTO="\033[31m${KRAK}%"
             else
@@ -120,12 +120,13 @@ function btc()
             else
                 COINBASETO="\033[32m+${COIN}%"
             fi;
-        #fi;
         echo -e "- \033[94mCoinbase : 1 BTC = ${COINBASE} ${PAIR} ${COINBASETO}\033[0m \t-"
         echo -e "- \033[95mKraken   : 1 BTC = ${KRAKEN} ${PAIR} ${KRAKENTO}\033[0m \t-"
         echo "-------------------------------------------------"
-        PREVKRAKEN=${KRAKEN}
-        PREVCOINBASE=${COINBASE}
+        if [[ -z "${PREVKRAKEN}" ]]; then
+            PREVKRAKEN=${KRAKEN}
+            PREVCOINBASE=${COINBASE}
+        fi;
         if [ -z "${SLEEP_FOR}" ]; then
             return;
         fi;
@@ -133,3 +134,4 @@ function btc()
         echo -e "\033[5A"
     done;
 }
+
