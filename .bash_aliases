@@ -83,6 +83,9 @@ function btc()
     local OPTIND
     usage() { echo "Usage: btc [-c USD] [-t <int>]" 1>&2; exit 1; }
 	PAIR=EUR
+	COINPAIR="BTC-EUR"
+	KRAKPAIRRES="XXBTZEUR"
+	KRAKPAIR="XBTEUR"
     SLEEP_FOR=""
     while getopts ":t::c::" o; do
         case "${o}" in
@@ -90,9 +93,19 @@ function btc()
                 SLEEP_FOR=${OPTARG}
                 ;;
             c)
-                if [[ ${OPTARG} = USD ]] || [[ ${OPTARG} = usd ]]; then
-                    PAIR=USD;
-                fi;
+				if [[ ! -z ${OPTARG} ]]; then
+                	PAIR="${OPTARG:0:3}";
+                	PAIR="${PAIR^^}";
+                	if [[ $PAIR = "USD" ]]; then
+                	    KRAKPAIR="XBTUSD"
+	                    KRAKPAIRRES="XXBTZUSD"
+	                    COINPAIR="BTC-USD"
+                    else
+                	    KRAKPAIR="${PAIR}XBT"
+	                    KRAKPAIRRES="X${PAIR}XXBT"
+	                    COINPAIR="${PAIR}-BTC"
+                	fi;
+				fi;
                 ;;
             *)
                 usage
@@ -105,8 +118,8 @@ function btc()
         echo "-------------------------------------------------"
         KRAKENTO=""
         COINBASETO=""
-        KRAKEN=$(curl -s -k -X GET "https://api.kraken.com/0/public/Ticker?pair=XBT${PAIR}" | node -pe "parseFloat(JSON.parse(require('fs').readFileSync('/dev/stdin').toString()).result.XXBTZ${PAIR}.c[0]).toFixed(2)")
-        COINBASE=$(curl -s -k -X GET "https://api.pro.coinbase.com/products/BTC-${PAIR}/ticker" | node -pe "parseFloat(JSON.parse(require('fs').readFileSync('/dev/stdin').toString()).price).toFixed(2)")
+        KRAKEN=$(curl -s -k -X GET "https://api.kraken.com/0/public/Ticker?pair=${KRAKPAIR}" | node -pe "parseFloat(JSON.parse(require('fs').readFileSync('/dev/stdin').toString()).result.${KRAKPAIRRES}.c[0]).toString().padEnd(8, '0')")
+        COINBASE=$(curl -s -k -X GET "https://api.pro.coinbase.com/products/${COINPAIR}/ticker" | node -pe "parseFloat(JSON.parse(require('fs').readFileSync('/dev/stdin').toString()).price).toString().padEnd(8, '0')")
 
             KRAK=$(node -pe "((parseFloat(${KRAKEN}) - parseFloat('${PREVKRAKEN}' || ${KRAKEN}))*100/parseFloat(${KRAKEN})).toFixed(2)")
             COIN=$(node -pe "((parseFloat(${COINBASE}) - parseFloat('${PREVCOINBASE}' || ${COINBASE}))*100/parseFloat(${COINBASE})).toFixed(2)")
@@ -134,4 +147,5 @@ function btc()
         echo -e "\033[5A"
     done;
 }
+
 
