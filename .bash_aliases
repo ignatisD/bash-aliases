@@ -77,7 +77,6 @@ function GetMyInterface()
 	ACTUAL_INTERFACE=$(ip route get "$TEST_HOST_IP" | grep -Po '(?<=(dev )).*(?= src| proto)')
 	echo -e "Interface: \e[38;5;196m${ACTUAL_INTERFACE:-NOT_FOUND}\e[0m"
 }
-
 function btc()
 {
     local OPTIND
@@ -116,10 +115,12 @@ function btc()
     shift $(( OPTIND - 1 ))
     while true; do
         echo "-------------------------------------------------"
+        KRAKNODE="parseFloat(JSON.parse(require('fs').readFileSync('/dev/stdin').toString()).result.${KRAKPAIRRES}.c[0])"
+        COINNODE="parseFloat(JSON.parse(require('fs').readFileSync('/dev/stdin').toString()).price)"
         KRAKENTO=""
         COINBASETO=""
-        KRAKEN=$(curl -s -k -X GET "https://api.kraken.com/0/public/Ticker?pair=${KRAKPAIR}" | node -pe "parseFloat(JSON.parse(require('fs').readFileSync('/dev/stdin').toString()).result.${KRAKPAIRRES}.c[0]).toString().padEnd(8, '0')")
-        COINBASE=$(curl -s -k -X GET "https://api.pro.coinbase.com/products/${COINPAIR}/ticker" | node -pe "parseFloat(JSON.parse(require('fs').readFileSync('/dev/stdin').toString()).price).toString().padEnd(8, '0')")
+        KRAKEN=$(curl -s -k -X GET "https://api.kraken.com/0/public/Ticker?pair=${KRAKPAIR}" | node -pe "${KRAKNODE}")
+        COINBASE=$(curl -s -k -X GET "https://api.pro.coinbase.com/products/${COINPAIR}/ticker" | node -pe "${COINNODE}")
 
             KRAK=$(node -pe "((parseFloat(${KRAKEN}) - parseFloat('${PREVKRAKEN}' || ${KRAKEN}))*100/parseFloat(${KRAKEN})).toFixed(2)")
             COIN=$(node -pe "((parseFloat(${COINBASE}) - parseFloat('${PREVCOINBASE}' || ${COINBASE}))*100/parseFloat(${COINBASE})).toFixed(2)")
@@ -133,8 +134,8 @@ function btc()
             else
                 COINBASETO="\033[32m+${COIN}%"
             fi;
-        echo -e "- \033[94mCoinbase : 1 BTC = ${COINBASE} ${PAIR} ${COINBASETO}\033[0m \t-"
-        echo -e "- \033[95mKraken   : 1 BTC = ${KRAKEN} ${PAIR} ${KRAKENTO}\033[0m \t-"
+        echo -e "- \033[94mCoinbase : 1 BTC = ${COINBASE} ${PAIR} ${COINBASETO}\033[0m \t"
+        echo -e "- \033[95mKraken   : 1 BTC = ${KRAKEN} ${PAIR} ${KRAKENTO}\033[0m \t"
         echo "-------------------------------------------------"
         if [[ -z "${PREVKRAKEN}" ]]; then
             PREVKRAKEN=${KRAKEN}
@@ -147,5 +148,3 @@ function btc()
         echo -e "\033[5A"
     done;
 }
-
-
