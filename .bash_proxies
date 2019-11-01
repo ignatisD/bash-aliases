@@ -13,10 +13,10 @@ function Proxify()
 	if [ ! -z "$2" ]; then
 		sshport="$2"
 	fi;	
-    process_pid=$(ps aux | grep -i "$sshalias" | grep -v grep | awk {'print $2'})
+    process_pid=$(ps ax | grep -i "ssh -D 0.0.0.0:${sshport} -f -C -q -N ${sshalias}" | grep -v grep | awk {'print $1'})
     if [ "$process_pid" == "" ]; then
-    	ssh -D 0.0.0.0:"$sshport" -f -C -q -N "$sshalias"
-		process_pid=$(ps aux | grep -i "$sshalias" | grep -v grep | awk {'print $2'})
+    	ssh -D 0.0.0.0:"$sshport" -f -C -q -N "${sshalias}"
+		process_pid=$(ps ax | grep -i "ssh -D 0.0.0.0:${sshport} -f -C -q -N ${sshalias}" | grep -v grep | awk {'print $1'})
 		echo "Proxy running at 0.0.0.0:"$sshport" with pid: $process_pid";
     else 
 		echo "Proxy running at 0.0.0.0:"$sshport" with pid: $process_pid";
