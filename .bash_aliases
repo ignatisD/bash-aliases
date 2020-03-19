@@ -1,4 +1,5 @@
 alias untar="tar -zxvf"
+alias targz="tar cvzf"
 alias clipfile="xclip -sel clip"
 alias clipout="xclip -o -sel clip"
 alias myip=GetMyIP
