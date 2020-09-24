@@ -73,9 +73,7 @@ function GetMyIP()
 
 function GetMyInterface()
 {
-   	TEST_HOST=google.com
-	TEST_HOST_IP=$(getent ahosts "$TEST_HOST" | awk '{print $1; exit}')
-	ACTUAL_INTERFACE=$(ip route get "$TEST_HOST_IP" | grep -Po '(?<=(dev )).*(?= src| proto)')
+	ACTUAL_INTERFACE=$(ip route get 8.8.8.8 | grep -Po '(?<=(dev )).*(?= src| proto)')
 	echo -e "Interface: \e[38;5;196m${ACTUAL_INTERFACE:-NOT_FOUND}\e[0m"
 }
 function btc()
