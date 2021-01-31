@@ -18,6 +18,18 @@ alias drm="docker service rm"
 alias dcrm="docker config rm"
 alias dlogs="docker service logs $1 --raw"
 
+
+function dlsa()
+{
+    SORTBY=4
+    if [[ ! -z "${1}" ]]; then
+        SORTBY="${1}"
+    fi
+    SERVICES=$(docker service ls --format "{{.Name}}" | sed "s/\n/ /g")
+
+    docker service ps -f "desired-state=running" ${SERVICES} | (read -r; printf "%s\n" "$REPLY"; sort -k "${SORTBY:-4}" )
+}
+
 function DockerBash()
 {
     _BASH="$2"
