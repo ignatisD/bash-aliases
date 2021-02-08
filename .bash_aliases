@@ -76,6 +76,13 @@ function GetMyInterface()
 	ACTUAL_INTERFACE=$(ip route get 8.8.8.8 | grep -Po '(?<=(dev )).*(?= src| proto)')
 	echo -e "Interface: \e[38;5;196m${ACTUAL_INTERFACE:-NOT_FOUND}\e[0m"
 }
+
+function GetLocalDevices()
+{
+    GetMyInterface
+    sudo arp-scan --interface="${ACTUAL_INTERFACE}" --localnet
+}
+
 function btc()
 {
     local OPTIND
