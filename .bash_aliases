@@ -73,14 +73,18 @@ function GetMyIP()
 
 function GetMyInterface()
 {
-	ACTUAL_INTERFACE=$(ip route get 8.8.8.8 | grep -Po '(?<=(dev )).*(?= src| proto)')
+	ACTUAL_INTERFACE=$(ip route get 8.8.8.8 | grep -Po '(?<=(dev ))[a-zA-Z0-9]+(?= )')
 	echo -e "Interface: \e[38;5;196m${ACTUAL_INTERFACE:-NOT_FOUND}\e[0m"
 }
 
 function GetLocalDevices()
 {
     GetMyInterface
-    sudo arp-scan --interface="${ACTUAL_INTERFACE}" --localnet
+    if [ "$EUID" == 0 ]; then
+    	arp-scan --interface="${ACTUAL_INTERFACE}" --localnet
+    else 
+    	arp -i "${ACTUAL_INTERFACE}"
+    fi
 }
 
 function btc()
