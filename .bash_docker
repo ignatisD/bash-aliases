@@ -111,14 +111,13 @@ function DockerExecRemote()
     DOCKER_EXEC_TASK_ID=$(docker service ps -f "desired-state=running" -q ${DOCKER_EXEC_TASK_NAME} | head -n 1)
     DOCKER_EXEC_CONT_ID=$(docker inspect -f "{{.Status.ContainerStatus.ContainerID}}" ${DOCKER_EXEC_TASK_ID} | head -n 1)
     DOCKER_EXEC_NODE_ID=$(docker inspect -f "{{.NodeID}}" ${DOCKER_EXEC_TASK_ID} | head -n 1)
-    DOCKER_EXEC_NODE_IP=$(docker inspect -f "{{.Status.Addr}}" ${DOCKER_EXEC_NODE_ID} | head -n 1)
     DOCKER_EXEC_NODE_NAME="$(docker node inspect -f "{{.Description.Hostname}}" ${DOCKER_EXEC_NODE_ID})"
 
     if [ "$DOCKER_EXEC_NODE_NAME" = "${HOSTNAME}" ]; then
         docker exec -i ${DOCKER_EXEC_CONT_ID} ${DOCKER_EXEC_CONTAINER_SHELL} -c "${DOCKER_EXEC_COMMAND}"
     else
         DOCKER_EXEC_COMMAND=${2//\"/\\\"}
-        ssh -T "${DOCKER_EXEC_NODE_IP}" << EOSSH
+        ssh -T "${DOCKER_EXEC_NODE_NAME}" << EOSSH
             docker exec ${DOCKER_EXEC_CONT_ID} ${DOCKER_EXEC_CONTAINER_SHELL} -c "${DOCKER_EXEC_COMMAND}"
 EOSSH
     fi
