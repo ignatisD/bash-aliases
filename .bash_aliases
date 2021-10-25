@@ -14,6 +14,18 @@ alias match=PerlMatch
 alias aliasedit=EditMyAliases
 alias sshedit="gedit ~/.ssh/config"
 
+function dui()
+{
+    local FOLDER="."
+    if [[ ! -z "${1}" ]] && [[ -d "${1}" ]]; then
+        FOLDER="${1}"
+    fi
+    local DEPTH="1"
+    if [[ ! -z "${2}" ]]; then
+        DEPTH="${2}"
+    fi
+    du -h -d "$DEPTH" "$FOLDER"
+}
 
 function EditMyAliases() 
 {
